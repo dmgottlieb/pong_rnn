@@ -7,6 +7,10 @@
 # matplotlib is used for live visualization (in __main__)
 #
 # game can be started with a seed to get deterministic outcomes
+#
+# Dependencies: everything's in PyPi except the version of images2gif.py from Almar Klein, Ant1, Marius van Voorden (2012). 
+# The PyPi version is apparently incompatible with PILlow. 
+
 
 import numpy as np
 
