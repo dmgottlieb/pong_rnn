@@ -43,6 +43,12 @@ class PongRNN(object):
 		self.history = self.graph.fit({'screen_in': q_train, 'control_in': p_train, 'screen_out': y_train}, nb_epoch=nb_epoch)
 		# Todo: write a method that calls pong as a generator, rather than using pre-generated data. 
 
+	def test(self, q, p, y):
+		print self.graph.test_on_batch({'screen_in': q, 'control_in': p, 'screen_out': y}, accuracy=True)
+
+	def predict(self, q, p, batch_size=128, verbose=0):
+		return self.graph.predict({'screen_in': q, 'control_in': p}, batch_size=batch_size, verbose=verbose)
+
 
 	def loss(self, y_true, y_pred):
 		pass 
