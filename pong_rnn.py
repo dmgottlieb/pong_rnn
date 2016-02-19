@@ -9,7 +9,7 @@
 # Given: nothing except screen buffers and input streams. 
 
 from keras.models import Graph
-from keras.layers.core import Dense
+from keras.layers.core import TimeDistributedDense, Flatten, Reshape, Dense, Activation 
 from keras.layers.recurrent import SimpleRNN
 from keras.layers.convolutional import Convolution2D
 from keras.regularizers import l2
@@ -23,24 +23,39 @@ class PongRNN(object):
 		reg = l2(0.001)
 		CONV3_1 = Convolution2D(nb_filter=8, nb_row=3, nb_col=3, init='he_uniform', activation='relu', border_mode='same', W_regularizer=reg)
 		CONV3_2 = Convolution2D(nb_filter=16, nb_row=3, nb_col=3, init='he_uniform', activation='relu', border_mode='same', W_regularizer=reg)
-		RNN3 = SimpleRNN(output_dim=256)
+		RNN3 = SimpleRNN(output_dim=512, input_dim=16386, input_length=9)
+		FC3 = Dense(1024, activation='relu', init='he_uniform')
+		FC4 = Dense(1024)
 
 		self.graph.add_input(name='screen_in', input_shape=(1,32,32)) 
 		self.graph.add_node(CONV3_1, name='CONV3_1', input='screen_in')
 		self.graph.add_node(CONV3_2, name='CONV3_2', input='CONV3_1')
+		self.graph.add_node(Flatten(), name='FLATTEN', input='CONV3_2')
 
 		self.graph.add_input(name='control_in', input_shape=(2,))
+		self.graph.add_node(Reshape((-1,2)), name='RESHAPE3', input='control_in')
 
-		self.graph.add_node(RNN3, name='RNN3', inputs=['CONV3_2', 'control_in'])
+		self.graph.add_node(Reshape((-1, 16384)), name='RESHAPE', input='FLATTEN')
 
-		self.graph.add_node(FC4, name='FC4', input='RNN3')
 
-		self.graph.add_output(name='screen_out', input='FC4')
+		self.graph.add_node(RNN3, name='RNN3', inputs=['RESHAPE', 'RESHAPE3'])
+
+		#self.graph.add_node(Reshape((-1, 256)), name='RESHAPE2', input='RNN3')
+
+		self.graph.add_node(FC3, name='FC3', input='RNN3')
+
+		self.graph.add_node(FC4, name='FC4', input='FC3')
+
+		self.graph.add_node(Activation('softmax'), name='SOFTMAX', input='FC4')
+
+		#self.graph.
+
+		self.graph.add_output(name='screen_out', input='SOFTMAX')
 
 		self.graph.compile(optimizer='adam', loss={'screen_out': 'binary_crossentropy'})
 
-	def train(self, q_train, p_train, y_train, nb_epoch=1): 
-		self.history = self.graph.fit({'screen_in': q_train, 'control_in': p_train, 'screen_out': y_train}, nb_epoch=nb_epoch)
+	def train(self, q_train, p_train, y_train, nb_epoch=1, batch_size=128): 
+		self.history = self.graph.fit({'screen_in': q_train, 'control_in': p_train, 'screen_out':y_train}, nb_epoch=nb_epoch)#, batch_size=batch_size)
 		# Todo: write a method that calls pong as a generator, rather than using pre-generated data. 
 
 	def test(self, q, p, y):
