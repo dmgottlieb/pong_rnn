@@ -36,3 +36,8 @@ Model tuning pipeline
 
 1. Visualize CONV weights
 2. Find a way to test recurrency
+
+Training pipeline
+=====
+
+1. Write routines to train on EC2 spot instances with checkpoints in case of instance loss. 
