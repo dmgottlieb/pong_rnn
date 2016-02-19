@@ -1,5 +1,5 @@
-% README.md
-% Dave Gottlieb (dmg1@stanford.edu)
+Pong RNN  
+Dave Gottlieb (dmg1@stanford.edu)
 
 **Pong RNN**: a deep learning model to learn the state transitions of a Pong game engine. 
 
