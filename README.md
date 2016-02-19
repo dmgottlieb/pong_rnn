@@ -12,5 +12,6 @@ Using:
 * Theano (model specification and GPU computation), 
 * numpy (data handling and Pong engine),
 * matplotlib (visualization),
+* jupyter (demonstration),
 * [images2gif.py](https://grass.osgeo.org/grass70/manuals/libpython/_modules/imaging/images2gif.html) (visualization),
 * pandas (data handling). 
