@@ -8,7 +8,8 @@
 #
 # game can be started with a seed to get deterministic outcomes
 #
-# Dependencies: everything's in PyPi except the version of images2gif.py from Almar Klein, Ant1, Marius van Voorden (2012). 
+# Dependencies: everything's in PyPi except this version of images2gif.py from Almar Klein, Ant1, Marius van Voorden (2012):
+# https://github.com/rec/echomesh/blob/master/code/python/external/images2gif.py
 # The PyPi version is apparently incompatible with PILlow. 
 
 
