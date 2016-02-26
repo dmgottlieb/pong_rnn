@@ -13,3 +13,5 @@ images2gif.py
 
 /.ipynb_checkpoints/
 
+*.pdf
+
