@@ -13,6 +13,7 @@ from keras.layers.core import TimeDistributedDense, Flatten, Reshape, Dense, Act
 from keras.layers.recurrent import SimpleRNN
 from keras.layers.convolutional import Convolution2D
 from keras.regularizers import l2
+from keras.callbacks import ModelCheckpoint, Callback
 
 
 class PongRNN(object): 
@@ -54,8 +55,22 @@ class PongRNN(object):
 
 		self.graph.compile(optimizer='adam', loss={'screen_out': 'binary_crossentropy'})
 
-	def train(self, q_train, p_train, y_train, nb_epoch=1, batch_size=128): 
-		self.history = self.graph.fit({'screen_in': q_train, 'control_in': p_train, 'screen_out':y_train}, nb_epoch=nb_epoch)#, batch_size=batch_size)
+	def train(self, q_train, p_train, y_train, nb_epoch=1, batch_size=128, checkpoints=False): 
+		
+		callbacks = []
+
+		if checkpoints: 
+			checkpointer = ModelCheckpoint(filepath="~/weights/weights.hdf5", verbose=1, save_best_only=True)
+			callbacks.append(checkpointer)
+			class S3Uploader(keras.callbacks.Callback):
+				def on_epoch_end(self,epoch, logs={}): 
+					import subprocess
+					subprocess.call("aws s3 sync ~/weights s3://model-checkpoints", shell=True)
+			uploader = S3Uploader()
+			callbacks.append(uploader)
+
+
+		self.history = self.graph.fit({'screen_in': q_train, 'control_in': p_train, 'screen_out':y_train}, nb_epoch=nb_epoch, callbacks=callbacks)#, batch_size=batch_size)
 		# Todo: write a method that calls pong as a generator, rather than using pre-generated data. 
 
 	def test(self, q, p, y):
