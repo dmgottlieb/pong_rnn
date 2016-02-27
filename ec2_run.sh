@@ -1,12 +1,14 @@
 #!/bin/sh
 
+set -e
+
 # ec2_run.sh
 # Dave Gottlieb 2016
 #
 # Spin up EC2 spot instance and run model with desired parameters, keeping checkpoints in case of instance loss. 
 # Based on gaming script from that one guy. Uses AWS CLI tools and jq. 
 
-set -e 
+
 
 export AWS_DEFAULT_REGION=us-west-1
 export EC2_SECURITY_GROUP_ID=sg-a4647bc1
@@ -26,7 +28,9 @@ AMI_ID=$( echo $AMI_SEARCH | jq --raw-output '.Images[0].ImageId' )
 echo $AMI_ID
 
 # If price is less than on-demand price minus $0.1, make a spot request
-if echo "$PRICE < 0.602" | bc | -gt 0; then
+COMP=$(echo "$PRICE < 0.602" | bc)
+
+if [ $COMP -gt 0 ]; then
 	echo -n "Creating spot instance request... "
 	SPOT_INSTANCE_ID=$( aws ec2 request-spot-instances --spot-price $( bc <<< "$PRICE + 0.05" ) --launch-specification "
 	  {
@@ -62,6 +66,9 @@ else
 	  }" | jq --raw-output '.Instances[0].InstanceId' )
 	echo $INSTANCE_ID
 
+	echo -n "Wait for instance running... " 
+	aws ec2 wait instance-running --instance-ids "$INSTANCE_ID"
+
 	echo -n "Getting ip address... "
 	IP=$( aws ec2 describe-instances --instance-ids "$INSTANCE_ID" | jq --raw-output '.Reservations[0].Instances[0].PublicIpAddress' )
 	echo "$IP"	
@@ -83,4 +90,9 @@ ssh -i ~/Downloads/thtestbed.pem ubuntu@$IP "
 
 # Do a job!
 
-ssh -i ~/Downloads/thtestbed.pem ubuntu@$IP "cd ~/pong-rnn; THEANO_FLAGS=mode=FAST_RUN,device=gpu,floatX=float32 python do_job.py"
+ssh -i ~/Downloads/thtestbed.pem ubuntu@$IP "cd ~/pong_rnn; THEANO_FLAGS=mode=FAST_RUN,device=gpu,floatX=float32 python do_job.py"
+
+
+
+
+

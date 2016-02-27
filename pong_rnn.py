@@ -62,7 +62,7 @@ class PongRNN(object):
 		if checkpoints: 
 			checkpointer = ModelCheckpoint(filepath="~/weights/weights.hdf5", verbose=1, save_best_only=True)
 			callbacks.append(checkpointer)
-			class S3Uploader(keras.callbacks.Callback):
+			class S3Uploader(Callback):
 				def on_epoch_end(self,epoch, logs={}): 
 					import subprocess
 					subprocess.call("aws s3 sync ~/weights s3://model-checkpoints", shell=True)

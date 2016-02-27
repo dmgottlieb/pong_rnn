@@ -12,7 +12,7 @@ q_list = []
 p_list = []
 y_list = []
 
-with HDFStore('data.h5') as store: 
+with HDFStore('/home/ubuntu/data/data.h5') as store: 
     for k in store.keys(): 
         d = np.array(store[k])[0:-1,:]
         
