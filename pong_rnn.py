@@ -24,7 +24,7 @@ class PongRNN(object):
 		reg = l2(0.001)
 		CONV3_1 = Convolution2D(nb_filter=8, nb_row=3, nb_col=3, init='he_uniform', activation='relu', border_mode='same', W_regularizer=reg)
 		CONV3_2 = Convolution2D(nb_filter=16, nb_row=3, nb_col=3, init='he_uniform', activation='relu', border_mode='same', W_regularizer=reg)
-		RNN3 = SimpleRNN(output_dim=512, input_dim=16386, input_length=9)
+		RNN3 = SimpleRNN(output_dim=512, input_dim=16386, input_length=9, stateful=True)
 		FC3 = Dense(1024, activation='relu', init='he_uniform')
 		FC4 = Dense(1024)
 
