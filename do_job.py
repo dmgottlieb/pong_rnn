@@ -6,11 +6,14 @@
 from pong_rnn import PongRNN
 from pandas import HDFStore, DataFrame
 import numpy as np
+from os import path
 
 # gather data
 q_list = []
 p_list = []
 y_list = []
+
+data_path = path('~/pong/data/data.h5')
 
 with HDFStore('/home/ubuntu/data/data.h5') as store: 
     for k in store.keys(): 

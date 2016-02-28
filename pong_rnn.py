@@ -60,7 +60,8 @@ class PongRNN(object):
 		callbacks = []
 
 		if checkpoints: 
-			checkpointer = ModelCheckpoint(filepath="~/weights/weights.hdf5", verbose=1, save_best_only=True)
+			checkpointer = ModelCheckpoint(filepath="~/weights/weights.hdf5", verbose=1, save_best_only=False)
+			# best model can't be determined w/o val_loss or similar
 			callbacks.append(checkpointer)
 			class S3Uploader(Callback):
 				def on_epoch_end(self,epoch, logs={}): 

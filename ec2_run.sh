@@ -81,10 +81,11 @@ while ! ping -c1 $IP &>/dev/null; do sleep 5; done
 # set up repo and files
 
 ssh -i ~/Downloads/thtestbed.pem ubuntu@$IP "
-	mkdir ~/weights 
-	aws s3 sync ~/weights s3://model-checkpoints 
-	mkdir ~/data 
-	aws s3 sync ~/data s3://pong-rnn-model-data
+	PATH=$PATH:/home/ubuntu/anaconda2/bin
+	mkdir -p ~/pong/weights 
+	aws s3 sync s3://model-checkpoints ~/pong/weights
+	mkdir -p ~/pong/data 
+	aws s3 sync s3://pong-rnn-model-data ~/pong/data 
 	git clone git@github.com:dmgottlieb/pong_rnn.git
 	"
 
