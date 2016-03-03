@@ -8,10 +8,17 @@
 #
 # Given: nothing except screen buffers and input streams. 
 
+# current implementation is broken -- dimension mismatches. 
+# would be pretty easy to revert to prototype which ran, but I am not convinced that 
+# prototype was actually running. 
+# Considering the intricateness of this design I think I will try to 
+# reimplement in Theano. 
+
 from keras.models import Graph
 from keras.layers.core import TimeDistributedDense, Flatten, Reshape, Dense, Activation 
 from keras.layers.recurrent import SimpleRNN
 from keras.layers.convolutional import Convolution2D
+from keras.layers.extra import TimeDistributedConvolution2D, TimeDistributedFlatten
 from keras.regularizers import l2
 from keras.callbacks import ModelCheckpoint, Callback
 
@@ -22,24 +29,26 @@ class PongRNN(object):
 		self.graph = Graph()
 
 		reg = l2(0.001)
-		CONV3_1 = Convolution2D(nb_filter=8, nb_row=3, nb_col=3, init='he_uniform', activation='relu', border_mode='same', W_regularizer=reg)
-		CONV3_2 = Convolution2D(nb_filter=16, nb_row=3, nb_col=3, init='he_uniform', activation='relu', border_mode='same', W_regularizer=reg)
-		RNN3 = SimpleRNN(output_dim=512, input_dim=16386, input_length=9, stateful=True)
+		CONV3_1 = TimeDistributedConvolution2D(nb_filter=8, nb_row=3, nb_col=3, init='he_uniform', activation='relu', border_mode='same', W_regularizer=reg)
+		CONV3_2 = TimeDistributedConvolution2D(nb_filter=16, nb_row=3, nb_col=3, init='he_uniform', activation='relu', border_mode='same', W_regularizer=reg)
+		RNN3 = SimpleRNN(output_dim=512, input_shape=(8,16386), input_length=8)
 		FC3 = Dense(1024, activation='relu', init='he_uniform')
 		FC4 = Dense(1024)
 
-		self.graph.add_input(name='screen_in', input_shape=(1,32,32)) 
+		self.graph.add_input(name='screen_in', input_shape=(8,1,32,32)) 
 		self.graph.add_node(CONV3_1, name='CONV3_1', input='screen_in')
 		self.graph.add_node(CONV3_2, name='CONV3_2', input='CONV3_1')
-		self.graph.add_node(Flatten(), name='FLATTEN', input='CONV3_2')
+		#self.graph.add_node(Flatten(), name='FLATTEN', input='CONV3_2')
 
-		self.graph.add_input(name='control_in', input_shape=(2,))
-		self.graph.add_node(Reshape((-1,2)), name='RESHAPE3', input='control_in')
+		self.graph.add_input(name='control_in', input_shape=(8,2,))
+		#self.graph.add_node(Reshape((-1,2)), name='RESHAPE3', input='control_in')
 
-		self.graph.add_node(Reshape((-1, 16384)), name='RESHAPE', input='FLATTEN')
+		#self.graph.add_node(Reshape((-1, 16384)), name='RESHAPE', input='FLATTEN')
 
+		#self.graph.add_node(Reshape((8,16386), batch_input_shape=(128,16386)), name='RESHAPE', inputs=['FLATTEN', 'control_in'])
 
-		self.graph.add_node(RNN3, name='RNN3', inputs=['RESHAPE', 'RESHAPE3'])
+		self.graph.add_node(TimeDistributedFlatten(), input='CONV3_2', name='FLATTEN')
+		self.graph.add_node(RNN3, name='RNN3', inputs=['FLATTEN', 'control_in'])
 
 		#self.graph.add_node(Reshape((-1, 256)), name='RESHAPE2', input='RNN3')
 

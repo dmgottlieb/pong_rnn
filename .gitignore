@@ -16,3 +16,4 @@ images2gif.py
 *.pdf
 
 /credentials/*
+Theano_tutorial.ipynb
