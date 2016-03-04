@@ -20,12 +20,12 @@ class PongState(object):
 
 	
 
-	def __init__(self, seed=None):
+	def __init__(self, seed=None,ballloc=(15,15)):
 		self.rnd = np.random.RandomState(seed)
 		self.screen_buffer = np.zeros((32,32), dtype=np.int8)
 		self.paddle_1 = self.Paddle(side='left', rnd=self.rnd)
 		self.paddle_2 = self.Paddle(side='right', rnd=self.rnd)
-		self.ball = self.Ball(rnd=self.rnd)
+		self.ball = self.Ball(rnd=self.rnd,top=ballloc)
 		self.scores = None
 
 
@@ -209,19 +209,19 @@ def gif_mode():
 	# ims = [Image.fromarray(s) for s in screen]
 	# ims.save('ani.gif', save_all=True)
 
-def headless_mode(): 
+def headless_mode(num_games=100,paddle1loc=None,paddle2loc=None,ballloc=(15,15)): 
 	# returns frames, a list of 1D numpy arrays of shape (32x32 + 2), 
 	# containing the screen state at time t (unraveled) followed by the input at time (t-1)
 	player1 = BallChaseAI()
 	player2 = BallChaseAI()
-	pong = PongState()
+	pong = PongState(ballloc=ballloc)
 	frames = []
 
 	i = 0
 	input1 = 0
 	input2 = 0
 
-	while(i < 100):
+	while(i < num_games):
 		input1 = player1.getMove(pong.ball, pong.paddle_1)
 		input2 = player2.getMove(pong.ball, pong.paddle_2)
 		pong.update(input1, input2)
