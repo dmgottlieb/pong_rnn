@@ -160,7 +160,24 @@ class TemporalFC(Layer):
         self.output = T.dot(X,self.W) + self.b
 
 
+class FC(Layer): 
+    def __init__(self, input_var, num_units=512, layerid=None,
+            in_dim=512): 
+
+	    X = input_var
+	    N = X.shape[0]
+	    D = in_dim
+	    H = num_units
+
+	    self.W = shared(self.glorot_init(H,D,H),name='W'+layerid)
+	    self.b = shared(np.zeros(H,dtype=np.float32),name='b'+layerid)
+	    self.params = [self.W,self.b]
 
 
 
-        
+	    self.output = T.dot(X,self.W) + self.b
+
+
+
+
+	    
