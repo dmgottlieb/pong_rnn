@@ -26,25 +26,31 @@ class PongRNNModel(object):
             n_input_channels=8, n_filters=16,
             layerid='CONV2')
 
-        PandQ = T.concatenate([self.CONV2.output.reshape((Tt,N,16*H*W)), 
+	self.POOL = T.signal.pool.pool_2d(self.CONV2.output,(2,2))
+        PandQ = T.concatenate([self.POOL.reshape((Tt,N,4*H*W)), 
                     self.P],
                     axis=2)
 
         self.LSTM = LSTMLayer(input_var=PandQ,num_units=512,
                     layerid='LSTM',
-                    in_dim=(32*32*16+2))
+                    in_dim=(32*32*16/4+2))
 
-        self.FC = TemporalFC(input_var=self.LSTM.output,
+	self.LSTM2 = LSTMLayer(input_var=self.LSTM.output,num_units=512,layerid='LSTM2',in_dim=(512))
+
+        self.FC = TemporalFC(input_var=self.LSTM2.output,
                     num_units=H*W,
                     layerid='FC',
                     in_dim=512)
 
 
 
-        Y_pred = T.nnet.softmax(self.FC.output.reshape((Tt*N,H*W))).reshape((Tt,N,H,W))
+        #Y_pred = T.nnet.softmax(self.FC.output.reshape((Tt*N,H*W))).reshape((Tt,N,H,W))*14.0
+	Y_pred = T.nnet.sigmoid(self.FC.output.reshape((Tt,N,H,W)))
 
         self.loss = T.nnet.binary_crossentropy(Y_pred,self.Y).mean(dtype=config.floatX)
-        self.compute_loss = function([self.Q,self.P,self.Y],outputs=self.loss)
+	#self.loss = (T.abs_(Y_pred - self.Y)).mean(dtype=config.floatX)
+	self.loss = -(self.Y * T.log(Y_pred) + (1-self.Y)* T.log(1-Y_pred)).mean(dtype=config.floatX)
+        #self.compute_loss = function([self.Q,self.P,self.Y],outputs=self.loss)
 
         self.params = (self.CONV1.params + 
                     self.CONV2.params + 
@@ -70,7 +76,7 @@ class PongRNNModel(object):
         return self._train(q,p,y,alpha)
 
     def predict(self, q,p): 
-    	return self._predict(q,p)
+    	return self._predict(q,p)[-1]
 
     def sample(self, seed, num=25): 
         pass
