@@ -36,8 +36,9 @@ class PongRNNModel(object):
                     in_dim=(32*32*16/4+2))
 
 	self.LSTM2 = LSTMLayer(input_var=self.LSTM.output,num_units=512,layerid='LSTM2',in_dim=(512))
+	self.LSTM3 = LSTMLayer(input_var=self.LSTM2.output,num_units=512,layerid='LSTM3',in_dim=(512))
 
-        self.FC = TemporalFC(input_var=self.LSTM2.output,
+        self.FC = TemporalFC(input_var=self.LSTM3.output,
                     num_units=H*W,
                     layerid='FC',
                     in_dim=512)
@@ -47,9 +48,10 @@ class PongRNNModel(object):
         #Y_pred = T.nnet.softmax(self.FC.output.reshape((Tt*N,H*W))).reshape((Tt,N,H,W))*14.0
 	Y_pred = T.nnet.sigmoid(self.FC.output.reshape((Tt,N,H,W)))
 
-        self.loss = T.nnet.binary_crossentropy(Y_pred,self.Y).mean(dtype=config.floatX)
+        #self.loss = T.nnet.binary_crossentropy(Y_pred,self.Y).mean(dtype=config.floatX)
 	#self.loss = (T.abs_(Y_pred - self.Y)).mean(dtype=config.floatX)
-	self.loss = -(self.Y * T.log(Y_pred) + (1-self.Y)* T.log(1-Y_pred)).mean(dtype=config.floatX)
+	#self.loss = ((Y_pred - self.Y) ** 2).mean(dtype=config.floatX) 
+	self.loss = -(self.Y * T.log(Y_pred)*14 + (1-self.Y)* T.log(1-Y_pred)).mean(dtype=config.floatX)
         #self.compute_loss = function([self.Q,self.P,self.Y],outputs=self.loss)
 
         self.params = (self.CONV1.params + 
@@ -61,8 +63,25 @@ class PongRNNModel(object):
 
         self._grad = function([self.Q,self.P,self.Y],outputs=self.grads)
 
-        self.updates = [(self.params[i], self.params[i] - self.alpha * self.grads[i])
-                for i in range(len(self.params))]
+	self.updates=[]
+	i = shared(config.floatX(0))
+	i_t = i + 1.0
+	updates.append((i,i_t))
+
+	for p, g in zip(self.params,self.grad):
+		m = shared(p.get_value()*0.)
+		v = shared(p.get_value()*0.)
+		m_t = 0.9*m + 0.1*g
+		v_t = 0.999*v + 0.001*g**2
+		p_t = p - m_t*(1-0.9**i_t)*self.alpha / T.sqrt(v_t*(1-0.999**i_t) + 1e-7)
+		updates.append((m,m_t))
+		updates.append((v,v_t))
+		updates.append((p,p_t))
+
+
+
+        #self.updates = [(self.params[i], self.params[i] - self.alpha * self.grads[i])
+        #        for i in range(len(self.params))]
 
         self._train = function([self.Q,self.P,self.Y,self.alpha],
                     outputs=self.loss,
@@ -70,13 +89,13 @@ class PongRNNModel(object):
 	
 	self._predict = function([self.Q,self.P],outputs=Y_pred)
 
-        self.print_y_softmax = function([self.Q,self.P],Y_pred)
+        #self.print_y_softmax = function([self.Q,self.P],Y_pred)
 
     def train(self, q, p, y,alpha=1e-2): 
         return self._train(q,p,y,alpha)
 
     def predict(self, q,p): 
-    	return self._predict(q,p)[-1]
+    	return self._predict(q,p)
 
     def sample(self, seed, num=25): 
         pass
@@ -97,6 +116,8 @@ class PongRNNModel(object):
             ngs.append(ng)
 
         return ng
+
+	
 
 
 
