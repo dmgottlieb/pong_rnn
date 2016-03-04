@@ -118,9 +118,9 @@ class PongState(object):
 			self.rnd = rnd
 			self.top = np.array(top)
 			self.size=size
-			#m_x = self.rnd.choice([-1,1])
-			#m_y = self.rnd.choice([-1,1])
-			m_x, m_y = -1,1
+			m_x = self.rnd.choice([-1,1])
+			m_y = self.rnd.choice([-1,1])
+			# m_x, m_y = -1,1
 			self.momentum = np.array([m_x,m_y])
 
 	class Paddle(object): 
@@ -232,6 +232,22 @@ def headless_mode(num_frames=100,paddle1loc=None,paddle2loc=None,ballloc=(15,15)
 
 	# insert ending frame
 	#frames.append(np.ones_like(screen) * -1)
+	return np.array(frames, dtype=np.int8)
+
+def ball_only_mode(num_frames=9,ballloc=(15,15)):
+	pong = PongState(ballloc=ballloc)
+	frames = []
+
+	i = 0
+	input1,input2 = 0,0
+
+	while(i < num_frames):
+		pong.update(input1,input2)
+		screen = pong.draw().flatten()
+		screen = np.append(screen, (input1, input2))
+		i+=1
+		frames.append(screen)
+
 	return np.array(frames, dtype=np.int8)
 
 def main():
