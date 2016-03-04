@@ -64,19 +64,21 @@ class PongRNNModel(object):
         self._grad = function([self.Q,self.P,self.Y],outputs=self.grads)
 
 	self.updates=[]
-	i = shared(config.floatX(0))
+	i = shared(np.cast['float32'](0))
+	#i = shared(np.zeros(1).astype(np.float32))
 	i_t = i + 1.0
-	updates.append((i,i_t))
+	self.updates.append((i,i_t))
+	alpha_t = T.sqrt(1 - 0.999 ** i_t) / (1 - 0.9 ** i_t) * self.alpha
 
-	for p, g in zip(self.params,self.grad):
+	for p, g in zip(self.params,self.grads):
 		m = shared(p.get_value()*0.)
 		v = shared(p.get_value()*0.)
 		m_t = 0.9*m + 0.1*g
 		v_t = 0.999*v + 0.001*g**2
-		p_t = p - m_t*(1-0.9**i_t)*self.alpha / T.sqrt(v_t*(1-0.999**i_t) + 1e-7)
-		updates.append((m,m_t))
-		updates.append((v,v_t))
-		updates.append((p,p_t))
+		p_t = p - m_t*alpha_t / T.sqrt(v_t + 1e-7)
+		self.updates.append((m,m_t))
+		self.updates.append((v,v_t))
+		self.updates.append((p,p_t))
 
 
 

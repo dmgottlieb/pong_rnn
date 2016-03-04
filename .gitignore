@@ -20,3 +20,4 @@ Theano_tutorial.ipynb
 nohup.out
 weights/
 /weights/*
+*.swp
