@@ -209,7 +209,7 @@ def gif_mode():
 	# ims = [Image.fromarray(s) for s in screen]
 	# ims.save('ani.gif', save_all=True)
 
-def headless_mode(num_games=100,paddle1loc=None,paddle2loc=None,ballloc=(15,15)): 
+def headless_mode(num_frames=100,paddle1loc=None,paddle2loc=None,ballloc=(15,15)): 
 	# returns frames, a list of 1D numpy arrays of shape (32x32 + 2), 
 	# containing the screen state at time t (unraveled) followed by the input at time (t-1)
 	player1 = BallChaseAI()
@@ -221,7 +221,7 @@ def headless_mode(num_games=100,paddle1loc=None,paddle2loc=None,ballloc=(15,15))
 	input1 = 0
 	input2 = 0
 
-	while(i < num_games):
+	while(i < num_frames):
 		input1 = player1.getMove(pong.ball, pong.paddle_1)
 		input2 = player2.getMove(pong.ball, pong.paddle_2)
 		pong.update(input1, input2)
@@ -231,7 +231,7 @@ def headless_mode(num_games=100,paddle1loc=None,paddle2loc=None,ballloc=(15,15))
 		frames.append(screen)
 
 	# insert ending frame
-	frames.append(np.ones_like(screen) * -1)
+	#frames.append(np.ones_like(screen) * -1)
 	return np.array(frames, dtype=np.int8)
 
 def main():
