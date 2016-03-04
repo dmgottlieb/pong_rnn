@@ -118,9 +118,9 @@ class PongState(object):
 			self.rnd = rnd
 			self.top = np.array(top)
 			self.size=size
-			m_x = self.rnd.choice([-1,1])
-			m_y = self.rnd.choice([-1,1])
-			# m_x, m_y = -1,1
+			#m_x = self.rnd.choice([-1,1])
+			#m_y = self.rnd.choice([-1,1])
+			m_x, m_y = -1,1
 			self.momentum = np.array([m_x,m_y])
 
 	class Paddle(object): 
