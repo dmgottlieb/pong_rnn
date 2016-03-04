@@ -61,11 +61,16 @@ class PongRNNModel(object):
         self._train = function([self.Q,self.P,self.Y,self.alpha],
                     outputs=self.loss,
                     updates=self.updates)
+	
+	self._predict = function([self.Q,self.P],outputs=Y_pred)
 
         self.print_y_softmax = function([self.Q,self.P],Y_pred)
 
     def train(self, q, p, y,alpha=1e-2): 
         return self._train(q,p,y,alpha)
+
+    def predict(self, q,p): 
+    	return self._predict(q,p)
 
     def sample(self, seed, num=25): 
         pass
