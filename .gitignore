@@ -21,3 +21,4 @@ nohup.out
 weights/
 /weights/*
 *.swp
+*.swo
