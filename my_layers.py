@@ -3,6 +3,10 @@
 #
 # Convenience classes and functions for Theano layers in a CNN / RNN. 
 
+from theano import *
+import theano.tensor as T
+import numpy as np
+
 class Layer(object): 
 
     def he_init(self, n_in=None, *args): 
@@ -28,7 +32,7 @@ class ConvReluLayer(Layer):
         H,W,F,C = height, width, n_filters, n_input_channels
         X = input_var
         
-        self.W = shared(self.he_init(F,C,H,W,n_in=(H*W*C)), name='W'+layerid)
+        self.W = shared(self.he_init(H*W*C,F,C,H,W), name='W'+layerid)
         self.b = shared(np.zeros(F,dtype=np.float32), name='b'+layerid)
         self.params = [self.W,self.b]
         
@@ -176,6 +180,24 @@ class FC(Layer):
 
 
 	    self.output = T.dot(X,self.W) + self.b
+
+class FCRelu(Layer): 
+    def __init__(self, input_var, num_units=512, layerid=None,
+            in_dim=512): 
+
+	    X = input_var
+	    N = X.shape[0]
+	    D = in_dim
+	    H = num_units
+
+	    self.W = shared(self.he_init(H,D,H),name='W'+layerid)
+	    self.b = shared(np.zeros(H,dtype=np.float32),name='b'+layerid)
+	    self.params = [self.W,self.b]
+
+
+
+	    self.output = T.nnet.relu(T.dot(X,self.W) + self.b)
+
 
 
 
