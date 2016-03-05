@@ -108,11 +108,12 @@ class LSTMLayer(Layer):
         self.Wh = shared(self.glorot_init(4*H,H,4*H),name='Wh'+layerid)
         self.b = shared(np.zeros(4*H,dtype=np.float32),name='b'+layerid)
         self.h0 = shared(np.zeros(H,dtype=np.float32),name='h0'+layerid)
-        self.params = [self.Wx, self.Wh,self.b,self.h0]
+        self.c0 = shared(np.zeros(H,dtype=np.float32),name='c0'+layerid)
+        self.params = [self.Wx, self.Wh,self.b,self.h0,self.c0]
 
         [h,c], _ = scan(self.step,
                 sequences=[X],
-                outputs_info=[T.alloc(self.h0,X.shape[1],H),T.zeros((X.shape[1],H))]
+                outputs_info=[T.alloc(self.h0,X.shape[1],H),T.alloc(self.c0,X.shape[1],H)]
                 )
 
         # Output: 
@@ -141,7 +142,10 @@ class TemporalReluFC(Layer):
         self.b = shared(np.zeros(H,dtype=np.float32),name='b'+layerid)
         self.params = [self.W,self.b]
 
-        preact = T.dot(X,self.W) + self.b
+        X_unroll = X.reshape((Tt*N,D))
+
+        preout = T.dot(X_unroll,self.W) + self.b
+        preact = preout.reshape((Tt,N,D))
 
         self.output = T.nnet.relu(preact)
 
@@ -159,9 +163,11 @@ class TemporalFC(Layer):
         self.b = shared(np.zeros(H,dtype=np.float32),name='b'+layerid)
         self.params = [self.W,self.b]
 
+        X_unroll = X.reshape((Tt*N,D))
 
+        preout = T.dot(X_unroll,self.W) + self.b
 
-        self.output = T.dot(X,self.W) + self.b
+        self.output = preout.reshape((Tt,N,D))
 
 
 class FC(Layer): 
