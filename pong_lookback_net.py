@@ -92,6 +92,8 @@ class LookbackNet(object):
         self._train = function([self.Q,self.P,self.Y,self.alpha],
                     outputs=self.loss,
                     updates=self.updates)
+
+        self._validate = function([self.Q,self.P,self.Y],outputs=self.loss)
     
         self._predict = function([self.Q,self.P],outputs=Y_pred)
 
@@ -99,6 +101,9 @@ class LookbackNet(object):
 
     def train(self, q, p, y,alpha=1e-2): 
         return self._train(q,p,y,alpha)
+
+    def validate(self,q,p,y): 
+        return self._validate(q,p,y)
 
     def predict(self, q,p): 
         return self._predict(q,p)
