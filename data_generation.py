@@ -1,106 +1,34 @@
 # data_generation.py
 # Dave Gottlieb 2016 (dmg1@stanford.edu)
 
+from numpy_pong import * 
 
 
-def pyplot_live_mode():
-	import matplotlib.pyplot as plt
-	import time
+def generate_data_lookback(mode=None,seq_length=4,num_seq=10): 
 
-	player1 = BallChaseAI()
-	player2 = BallChaseAI()
-	pong = PongState()
-	keep_going = True
+    y_list = []
+    q_list = []
+    p_list = []
 
-	plt.axis([0,32,0,32])
-	plt.ion()
-	#plt.show()
+    data = []
 
+    for i in range(num_seq): 
+        start_ball = (np.random.choice(np.arange(30)),
+            np.random.choice(np.arange(24))+2)
+        seq = numpy_pong.headless_mode(num_frames=seq_length+1, 
+                ballloc=start_ball)
+        y = seq[seq_length,0:1024].reshape((32,32))
+        q = seq[0:seq_length,0:1024].reshape((-1,32,32))
+        p = seq[seq_length-1,1024:].reshape((2))
 
-	i=0
-	while(i < 50): 
-		input1 = player1.getMove(pong.ball, pong.paddle_1)
-		input2 = player2.getMove(pong.ball, pong.paddle_2)
-		pong.update(input1, input2)
-		screen = pong.draw()
-		plt.imshow(screen)
-		plt.draw()
-		plt.show()
-		plt.pause(0.01)
-		i+=1
-		#keep_going = False
-		#print np.where(screen != 0)
+        y_list.append(y)
+        p_list.append(p)
+        q_list.append(q)
 
-def gif_mode():
-	from PIL import Image, ImageSequence
-	from images2gif import writeGif
-	player1 = BallChaseAI()
-	player2 = BallChaseAI()
-	pong = PongState()
-	frames = []
+        if (i+1) % 10000 == 0: print "%i sequences generated" % (i+1)
 
+    q_data = np.stack(q_list,axis=0)
+    p_data = np.concatenate(p_list,axis=0)
+    y_data = np.concatenate(y_list,axis=0)
 
-	i=0
-	while(i < 768): 
-		input1 = player1.getMove(pong.ball, pong.paddle_1)
-		input2 = player2.getMove(pong.ball, pong.paddle_2)
-		pong.update(input1, input2)
-		screen = pong.draw()
-		i+=1
-		#keep_going = False
-		#print np.where(screen != 0)
-		# screen = screen[:,:]
-		frames.append(Image.fromarray(screen*255, mode='L'))
-		# im.show()
-		# im.save('frame' + str(i) + '.gif')
-
-	writeGif("frames.gif", frames, duration=0.1)
-	# ims = [Image.fromarray(s) for s in screen]
-	# ims.save('ani.gif', save_all=True)
-
-def headless_mode(): 
-	# returns frames, a list of 1D numpy arrays of shape (32x32 + 2), 
-	# containing the screen state at time t (unraveled) followed by the input at time (t-1)
-	player1 = BallChaseAI()
-	player2 = BallChaseAI()
-	pong = PongState()
-	frames = []
-
-	i = 0
-	input1 = 0
-	input2 = 0
-
-	while(i < 100):
-		input1 = player1.getMove(pong.ball, pong.paddle_1)
-		input2 = player2.getMove(pong.ball, pong.paddle_2)
-		pong.update(input1, input2)
-		screen = pong.draw().flatten()
-		screen = np.append(screen, (input1,input2))
-		i+=1
-		frames.append(screen)
-
-	# insert ending frame
-	frames.append(np.ones_like(screen) * -1)
-	return np.array(frames, dtype=np.int8)
-
-def main():
-	# from pandas import HDFStore	
-	# from pandas import DataFrame as df 
-	# import tables
-
-	# store = HDFStore('data.h5')
-
-	for j in range(1):
-		# frames = df(headless_mode())
-		#store['game_' + str(j)] = frames
-		frames = headless_mode()
-		np.savetxt('gametest.txt', frames, fmt='%i')
-
-	# store.close()
-
-
-if __name__ == "__main__":
-	main()
-
-
-
+    return q_data,p_data,y_data
