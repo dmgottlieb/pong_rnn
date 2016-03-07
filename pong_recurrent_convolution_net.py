@@ -34,28 +34,31 @@ class PongRCNN(Model.Model):
         self.Q_view = self.Q.reshape((Tt,N,1,height,width))
         
         self.LSTM_RCN1 = LSTM_RCNLayer(input_var=self.Q_view,sequence=seq_length,
-        			n_input_channels=1, height=3,width=3,n_filters=8,
+        			n_input_channels=1, height=3,width=3,n_filters=4,
         			layerid='LSTM_RCN1')
 
         self.LSTM_RCN2 = LSTM_RCNLayer(input_var=self.LSTM_RCN1.output,
         			sequence=seq_length, layerid='LSTM_RCN2',
-        			n_input_channels=8, height=3,width=3,n_filters=16)
+        			n_input_channels=4, height=3,width=3,n_filters=8)
 
-        self.LSTM_RCN3 = LSTM_RCNLayer(input_var=self.LSTM_RCN2.output,
-			sequence=seq_length, layerid='LSTM_RCN3',
-			n_input_channels=16, height=3,width=3,n_filters=16)
+   #      self.LSTM_RCN3 = LSTM_RCNLayer(input_var=self.LSTM_RCN2.output,
+			# sequence=seq_length, layerid='LSTM_RCN3',
+			# n_input_channels=4, height=3,width=3,n_filters=4)
 
-        self.POOL = T.signal.pool.pool_2d(self.LSTM_RCN3.output,(2,2))
+        self.POOL = T.signal.pool.pool_2d(self.LSTM_RCN2.output,(2,2))
 
-        Q_unroll = self.POOL.reshape((Tt,N,height*width*16/4),ndim=3)
+        Q_unroll = self.POOL.reshape((Tt,N,height*width*8/4),ndim=3)
 
         PandQ = T.concatenate([Q_unroll, 
                     self.P],
                     axis=2)
 
-        self.FC1 = TemporalReluFC(input_var=PandQ,num_units=512,layerid='FC1',in_dim=(height*width*16/4 + 2))
+        self.LSTM = LSTMLayer(input_var=PandQ, num_units=512,layerid='LSTM',
+            sequence=Tt,in_dim=(height*width*16/4 + 2))
 
-        self.FC2 = TemporalFC(input_var=self.FC1.output,
+        #self.FC1 = TemporalReluFC(input_var=PandQ,num_units=512,layerid='FC1',in_dim=(height*width*16/4 + 2))
+
+        self.FC2 = TemporalFC(input_var=self.LSTM.output,
                     num_units=height*width,
                     layerid='FC2',
                     in_dim=512)
