@@ -76,8 +76,10 @@ class PongRCNN(Model.Model):
         self.params = {}
         self.params.update(self.LSTM_RCN1.params)
         self.params.update(self.LSTM_RCN2.params)
-        self.params.update(self.FC1.params)
+        #self.params.update(self.FC1.params)
+        self.params.update(self.LSTM.params)
         self.params.update(self.FC2.params)
+
 
         self.train_args = [self.Q,self.P,self.Y,self.alpha]
         self.predict_args = [self.Q,self.P]
