@@ -32,10 +32,11 @@ class ConvReluLayer(Layer):
         H,W,F,C = height, width, n_filters, n_input_channels
         X = input_var
         
-        self.W = shared(self.he_init(H*W*C,F,C,H,W), name='W'+layerid)
+        self.W = shared(self.he_init(H*W*F,F,C,H,W), name='W'+layerid)
         self.b = shared(np.zeros(F,dtype=np.float32), name='b'+layerid)
-        self.params = [self.W,self.b]
-        
+        self.params = {self.W.name: self.W,
+                        self.b.name: self.b}
+
         CONV = T.nnet.conv2d(X,self.W,border_mode='half')
         BIAS = CONV + self.b.dimshuffle('x',0,'x','x')
         RELU = T.nnet.relu(BIAS)
@@ -57,10 +58,13 @@ class TemporalConvReluLayer(Layer):
         X = input_var.reshape((Tt * N, 
             input_var.shape[2], input_var.shape[3], input_var.shape[4]))
         
-        self.W = shared(self.he_init(H*W*C,F,C,H,W), name='W'+layerid)
+        # I think fan-in is H*W*F, but some previous results used
+        # H*W*C -- if this stops working, change back to that. 
+        self.W = shared(self.he_init(H*W*F,F,C,H,W), name='W'+layerid)
         self.b = shared(np.zeros(F,dtype=np.float32), name='b'+layerid)
-        self.params = [self.W,self.b]
-        
+        self.params = {self.W.name: self.W,
+                        self.b.name: self.b}
+
         CONV = T.nnet.conv2d(X,self.W,border_mode='half')
         BIAS = CONV + self.b.dimshuffle('x',0,'x','x')
         RELU = T.nnet.relu(BIAS)
@@ -95,8 +99,8 @@ class LSTMLayer(Layer):
         return h_t, c_t
 
 
-    def __init__(self, input_var, num_units=128, layerid=None, sequence=8,
-                        in_dim=16386): 
+    def __init__(self, input_var, num_units, layerid, sequence,
+                        in_dim): 
 
         X = input_var
         Tt,N = X.shape[0], X.shape[1]
@@ -107,13 +111,17 @@ class LSTMLayer(Layer):
         self.Wx = shared(self.glorot_init(4*H,D,4*H),name='Wx'+layerid)
         self.Wh = shared(self.glorot_init(4*H,H,4*H),name='Wh'+layerid)
         self.b = shared(np.zeros(4*H,dtype=np.float32),name='b'+layerid)
-        self.h0 = shared(np.zeros(H,dtype=np.float32),name='h0'+layerid)
-        self.c0 = shared(np.zeros(H,dtype=np.float32),name='c0'+layerid)
-        self.params = [self.Wx, self.Wh,self.b,self.h0,self.c0]
+        #self.h0 = shared(np.zeros(H,dtype=np.float32),name='h0'+layerid)
+        #self.c0 = shared(np.zeros(H,dtype=np.float32),name='c0'+layerid)
+        self.params = {
+            self.Wx.name: self.Wx,
+            self.Wh.name: self.Wh,
+            self.b.name: self.b
+            }#[self.Wx, self.Wh,self.b]#,self.h0,self.c0]
 
         [h,c], _ = scan(self.step,
                 sequences=[X],
-                outputs_info=[T.alloc(self.h0,X.shape[1],H),T.alloc(self.c0,X.shape[1],H)]
+                outputs_info=[T.zeros((X.shape[1],H),dtype=config.floatX),T.zeros((X.shape[1],H),dtype=config.floatX)]
                 )
 
         # Output: 
@@ -132,20 +140,22 @@ class LSTMLayer(Layer):
 
 class TemporalReluFC(Layer): 
 
-    def __init__(self, input_var, num_units=512, layerid=None): 
+    def __init__(self, input_var, num_units=512, layerid=None,
+                in_dim=512): 
 
         X = input_var
-        Tt,N,D = X.shape[0], X.shape[1], X.shape[2]
+        Tt,N,D = X.shape[0], X.shape[1], in_dim
         H = num_units
 
-        self.W = shared(self.he_init((D,H)),name='W'+layerid)
+        self.W = shared(self.he_init(H,D,H),name='W'+layerid)
         self.b = shared(np.zeros(H,dtype=np.float32),name='b'+layerid)
-        self.params = [self.W,self.b]
-
+        self.params = {self.W.name: self.W,
+                        self.b.name: self.b}
+                        
         X_unroll = X.reshape((Tt*N,D))
 
         preout = T.dot(X_unroll,self.W) + self.b
-        preact = preout.reshape((Tt,N,D))
+        preact = preout.reshape((Tt,N,H))
 
         self.output = T.nnet.relu(preact)
 
@@ -161,51 +171,111 @@ class TemporalFC(Layer):
 
         self.W = shared(self.glorot_init(H,D,H),name='W'+layerid)
         self.b = shared(np.zeros(H,dtype=np.float32),name='b'+layerid)
-        self.params = [self.W,self.b]
+        self.params = {self.W.name: self.W,
+                        self.b.name: self.b}
 
         X_unroll = X.reshape((Tt*N,D))
 
         preout = T.dot(X_unroll,self.W) + self.b
 
-        self.output = preout.reshape((Tt,N,D))
+        self.output = preout.reshape((Tt,N,H))
 
 
 class FC(Layer): 
     def __init__(self, input_var, num_units=512, layerid=None,
             in_dim=512): 
 
-	    X = input_var
-	    N = X.shape[0]
-	    D = in_dim
-	    H = num_units
+        X = input_var
+        N = X.shape[0]
+        D = in_dim
+        H = num_units
 
-	    self.W = shared(self.glorot_init(H,D,H),name='W'+layerid)
-	    self.b = shared(np.zeros(H,dtype=np.float32),name='b'+layerid)
-	    self.params = [self.W,self.b]
+        self.W = shared(self.glorot_init(H,D,H),name='W'+layerid)
+        self.b = shared(np.zeros(H,dtype=np.float32),name='b'+layerid)
+        self.params = {self.W.name: self.W,
+                        self.b.name: self.b}
 
 
 
-	    self.output = T.dot(X,self.W) + self.b
+        self.output = T.dot(X,self.W) + self.b
 
 class FCRelu(Layer): 
     def __init__(self, input_var, num_units=512, layerid=None,
             in_dim=512): 
 
-	    X = input_var
-	    N = X.shape[0]
-	    D = in_dim
-	    H = num_units
+        X = input_var
+        N = X.shape[0]
+        D = in_dim
+        H = num_units
 
-	    self.W = shared(self.he_init(H,D,H),name='W'+layerid)
-	    self.b = shared(np.zeros(H,dtype=np.float32),name='b'+layerid)
-	    self.params = [self.W,self.b]
-
-
-
-	    self.output = T.nnet.relu(T.dot(X,self.W) + self.b)
+        self.W = shared(self.he_init(H,D,H),name='W'+layerid)
+        self.b = shared(np.zeros(H,dtype=np.float32),name='b'+layerid)
+        self.params = {self.W.name: self.W,
+                        self.b.name: self.b}
 
 
+        self.output = T.nnet.relu(T.dot(X,self.W) + self.b)
+
+class LSTM_RCNLayer(Layer): 
+    """
+    Implements a minibatch recurrent convolutional layer, 
+    similar to the GRU-RCN described in Ballas et al. (2016).
+    http://arxiv.org/pdf/1511.06432.pdf
+    """
+
+    def step(self, X_t,h_tm1,c_tm1): 
+        Wx,Wh,b,F = self.Wx,self.Wh,self.b,self.n_filters
+        # preactivation with dims (N, 4*F, H, W)
+        a = (T.nnet.conv2d(X_t,self.Wx,border_mode='half') +
+                T.nnet.conv2d(h_tm1,Wh,border_mode='half') + 
+                b.dimshuffle('x',0,'x','x'))
+        ai = a[:,0:F]
+        af = a[:,F:2*F]
+        ao = a[:,2*F:3*F]
+        ag = a[:,3*F:4*F]
+        i = T.nnet.sigmoid(ai)
+        f = T.nnet.sigmoid(af)
+        o = T.nnet.sigmoid(ao)
+        g = T.tanh(ag) 
+
+        c_t = (f * c_tm1 + i * g ).astype(config.floatX)
+        h_t = o * T.tanh(c_t).astype(config.floatX)
+
+        return h_t, c_t
+
+    def __init__(self, input_var, 
+                layerid,sequence,n_input_channels=1,
+                height=3,width=3,n_filters=8):
+        
+        X = input_var
+        imH, imW = X.shape[-2],X.shape[-1]
+
+        H, W, F, C = height, width, n_filters, n_input_channels
+        Tt, N = input_var.shape[0],input_var.shape[1]
+        self.n_filters = n_filters
+
+
+        self.Wx = shared(self.glorot_init(H*W*F,4*F,C,H,W), name='Wx'+layerid)
+        self.Wh = shared(self.glorot_init(4*H*W*F,4*F,F,H,W),name='Wh'+layerid)
+        self.b = shared(np.zeros(4*F,dtype=np.float32),name='b'+layerid)
+
+        self.params = {
+            self.Wx.name: self.Wx,
+            self.Wh.name: self.Wh,
+            self.b.name: self.b
+            }
+
+        [h,c], _ = scan(self.step,
+            sequences=[X],
+            outputs_info=[
+                        T.alloc(np.cast['float32'](0), N,F,imH,imW),
+                        T.alloc(np.cast['float32'](0), N,F,imH,imW)
+                        ])
+
+        self.output = h
 
 
 
-	    
+
+
+        

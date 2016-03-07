@@ -1,4 +1,10 @@
+VERY RELEVANT
+=====
 
+DELVING DEEPER INTO CONVOLUTIONAL NETWORKS
+FOR LEARNING VIDEO REPRESENTATIONS
+Nicolas Ballas1, Li Yao1, Chris Pal2, Aaron Courville1
+http://arxiv.org/pdf/1511.06432.pdf
 
 POSSIBLE 
 =====

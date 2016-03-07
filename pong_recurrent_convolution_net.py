@@ -1,59 +1,63 @@
-# theano_pong_rnn.py
+# pong_recurrent_convolution_net.py
 # Dave Gottlieb (dmg1@stanford.edu) 2016
 #
-# Pong RNN model reimplemented more correctly + flexibly directly in Theano
+# Uses the approach of Ballas et al. 2016 to attempt to learn 
+# intertemporal dependencies of an evolving game state from 
+# control inputs and screen outputs. 
+#
+# My current best-performing approach is limited to local dependencies
+# (fixed window of frames), which is sufficient to reproduce Pong
+# but would probably fail for even simple other games. 
 
 from theano import *
 import theano.tensor as T
 import numpy as np
-from my_layers import *
+from my_layers import * 
 import Model
 
-class PongRNNModel(Model.Model): 
-    
+class PongRCNN(Model.Model): 
 
-    
-    def __init__(self, Tt, N, H, W): 
-
-        self.batch_size=N
-        self.seq_length=Tt
+    def __init__(self, seq_length=8,batch_size=128,height=32,width=32): 
         
-        self.Q = T.tensor4('Q',dtype=config.floatX) # (T,N,H,W), will reshape to (T,N,1,H,W) for convolution
-        self.P = T.tensor3('P',dtype=config.floatX) # (T,N,D=2)
-        self.Y = T.tensor4('Y',dtype=config.floatX) # (T,N,H,W)
+        self.Q = T.tensor4('Q',dtype=config.floatX) # (seq,batch,H,W)
+        self.P = T.tensor3('P',dtype=config.floatX) # (seq,batch,D=2)
+        self.Y = T.tensor4('Y',dtype=config.floatX) # (seq,batch,H,W)
+
+        Tt, N = self.Q.shape[0], self.Q.shape[1]
+        self.batch_size = batch_size
+        self.seq_length=seq_length
 
         self.alpha = T.scalar('alpha',dtype=config.floatX) # learning rate
 
-        self.Q_view = self.Q.reshape((Tt,N,1,H,W))
+        # reshape Q to (T,N,1,H,W) 
+        self.Q_view = self.Q.reshape((Tt,N,1,height,width))
         
-        self.CONV1 = TemporalConvReluLayer(input_var=self.Q_view,layerid='CONV1')
-        self.CONV2 = TemporalConvReluLayer(input_var=self.CONV1.output,
-            n_input_channels=8, n_filters=16,
-            layerid='CONV2')
+        self.LSTM_RCN1 = LSTM_RCNLayer(input_var=self.Q_view,sequence=seq_length,
+        			n_input_channels=1, height=3,width=3,n_filters=4,
+        			layerid='LSTM_RCN1')
 
-        self.POOL = T.signal.pool.pool_2d(self.CONV2.output,(2,2))
-        PandQ = T.concatenate([self.POOL.reshape((Tt,N,4*H*W)), 
+        self.LSTM_RCN2 = LSTM_RCNLayer(input_var=self.LSTM_RCN1.output,
+        			sequence=seq_length, layerid='LSTM_RCN2',
+        			n_input_channels=4, height=3,width=3,n_filters=4)
+
+        self.POOL = T.signal.pool.pool_2d(self.LSTM_RCN2.output,(2,2))
+
+        Q_unroll = self.POOL.reshape((Tt,N,height*width*4/4),ndim=3)
+
+        PandQ = T.concatenate([Q_unroll, 
                     self.P],
                     axis=2)
 
-        self.LSTM = LSTMLayer(input_var=PandQ,num_units=512,
-                    layerid='LSTM', sequence=Tt,
-                    in_dim=(32*32*16/4+2))
+        self.FC1 = TemporalReluFC(input_var=PandQ,num_units=512,layerid='FC1',in_dim=(height*width*4/4 + 2))
 
-        #self.LSTM2 = LSTMLayer(input_var=self.LSTM.output,num_units=512,layerid='LSTM2',in_dim=(512))
-        #self.LSTM3 = LSTMLayer(input_var=self.LSTM2.output,num_units=512,layerid='LSTM3',in_dim=(512))
-
-        self.FC = TemporalFC(input_var=self.LSTM.output,
-                    num_units=H*W,
-                    layerid='FC',
+        self.FC2 = TemporalFC(input_var=self.FC1.output,
+                    num_units=height*width,
+                    layerid='FC2',
                     in_dim=512)
 
 
 
-        #Y_pred = T.nnet.softmax(self.FC.output.reshape((Tt*N,H*W))).reshape((Tt,N,H,W))*14.0
-        Y_pred = T.nnet.sigmoid(self.FC.output.reshape(self.Q.shape))
-
-        self.output = Y_pred
+        Y_pred = T.nnet.sigmoid(self.FC2.output.reshape(self.Q.shape))
 
         #self.loss = T.nnet.binary_crossentropy(Y_pred,self.Y).mean(dtype=config.floatX)
         #self.loss = (T.abs_(Y_pred - self.Y)).mean(dtype=config.floatX)
@@ -62,18 +66,20 @@ class PongRNNModel(Model.Model):
         #self.compute_loss = function([self.Q,self.P,self.Y],outputs=self.loss)
 
         self.params = {}
-        self.params.update(self.CONV1.params)
-        self.params.update(self.CONV2.params)
-        self.params.update(self.LSTM.params)
-        self.params.update(self.FC.params)
+        self.params.update(self.LSTM_RCN1.params)
+        self.params.update(self.LSTM_RCN2.params)
+        self.params.update(self.FC1.params)
+        self.params.update(self.FC2.params)
 
         self.train_args = [self.Q,self.P,self.Y,self.alpha]
         self.predict_args = [self.Q,self.P]
 
-        # super constructor creates gradients, _train, and _predict
-        super(PongRNNModel,self).__init__()
+        self.output = Y_pred
 
+        super(PongRCNN,self).__init__()
 
+        #self._validate = function([self.Q,self.P,self.Y],outputs=self.loss)
+    
 
     def train(self, q, p, y,alpha=1e-2): 
         return self._train(q,p,y,alpha)
@@ -139,6 +145,9 @@ class PongRNNModel(Model.Model):
         return history
 
 
+    def validate(self,q,p,y): 
+    	pass
+        # return self._validate(q,p,y)
 
     def predict(self, q,p): 
         return self._predict(q,p)
@@ -147,23 +156,23 @@ class PongRNNModel(Model.Model):
         pass
 
     def sym_grads(self,q,p,y): 
-        return self._grad(q,p,y)
+    	pass
+        # return self._grad(q,p,y)
 
     def num_grads(self, q,p,y,eps=1e-6): 
-        ngs = []
-        for p in self.params: 
-            old_v = p.get_value()
-            p.set_value(old_v - eps)
-            fm = self.compute_loss(q,p,y)
-            p.set_value(old_v + eps)
-            fp = self.compute_loss(q,p,y)
-            ng = (fp - fm) / 2 * eps
-            p.set_value(old_v)
-            ngs.append(ng)
+    	pass
+        # ngs = []
+        # for p in self.params: 
+        #     old_v = p.get_value()
+        #     p.set_value(old_v - eps)
+        #     fm = self.compute_loss(q,p,y)
+        #     p.set_value(old_v + eps)
+        #     fp = self.compute_loss(q,p,y)
+        #     ng = (fp - fm) / 2 * eps
+        #     p.set_value(old_v)
+        #     ngs.append(ng)
 
-        return ng
+        # return ng
 
     
-
-
 

@@ -1,34 +1,41 @@
 % todo.md
 % Dave Gottlieb (dmg1@stanford.edu)
 
+Priority items: 
+=====
+
+1. Write a routine to keep the best set of weights if an update makes them worse
+2. Research initialization schemes for dropout
+2. Implement dropout
+3. Randomize inputs in training data
+4. Build live prediction
+
+
 Model changes to explore 
 =====
 
-1. Fewer layers in convolution layers
-2. Add a convolution layer
-3. Add a FC layer after convolutions
-4. BIG CHANGE: work out encoder-decoder architectures and try to apply one
-4. BLUE SKY: use the 1-bit technique from Courbariaux & Bengio (2016) and add more layers (good fit because my data is ~1-bit already)
-5. Implement dropout (read http://arxiv.org/pdf/1409.2329.pdf; apply dropout to output but not recurrent wires)
-	a. See if Keras implementation works this way
-6. Use LSTMs
+1. Implement dropout or other regularization (if the model overfits)
+
+Training Pipeline
+=====
+
+1. Write a routine to keep the best set of weights if an update makes them worse
 
 
 Data generation pipeline
 =====
 
-1. Put each frame into T different sequences
-2. Add more randomness
-3. Have fewer restarts (maybe 0)
-4. Feed last previous frame into new sequence
+
+1. Inputs should be randomized to ensure that the model is not learning the AI. 
+1. Some sequences should begin with empty frames so the model can learn how to start up.
+2. Ensure that sequences where the ball goes off-screen can occur -- since my time window is only 4 frames, I need to make sure all interesting cases are within 4 frames of start. 
 5. POSSIBLY: augment training data with noise so that it looks a bit more like the predictions will 
 
 Live prediction pipeline: 
 =====
 
-1. Feed model a live (1xTxD) stream instead of (1x1xD)
-2. See if this improves test performance
-
+1. Build live prediction / feedback code
+2. Test it against fast-playing AIs and visually inspect: how long does it take for entropy to overtake game? 
 
 AI updates
 =====
@@ -41,15 +48,11 @@ AI updates
 Model tuning pipeline
 =====
 
-1. Visualize CONV weights
-2. Find a way to test recurrency
+1. Visualize weights
+2. Visualize loss
 
-Training pipeline
+Blue Sky possibilities
 =====
 
-1. Write routines to train on EC2 spot instances with checkpoints in case of instance loss. 
-2. SPECULATIVE: curriculum learning? See (http://ronan.collobert.com/pub/matos/2009_curriculum_icml.pdf), (http://arxiv.org/pdf/1410.4615v3.pdf)
-	-- Curriculum learning regime: many examples where only one thing is moving. E.g., ball moving and paddles still; only one paddle moving at a time; ball moving and hitting paddle(?). 
-	-- Test whether simple relationships are being learned? 
-	-- Introduce combinations of simple relationships and then fully general data. 
-	-- The Zaremba / Sutskever combination curriculum learning strategy is: mix in curriculum-difficulty examples with examples of random difficulty. 
+1. Test the model on data from other games, possibly ones I didn't make -- this should be somewhat doable
+

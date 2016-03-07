@@ -91,7 +91,7 @@ ssh -i ~/Downloads/thtestbed.pem ubuntu@$IP "
 
 # Do a job!
 
-ssh -i ~/Downloads/thtestbed.pem ubuntu@$IP "cd ~/pong_rnn; THEANO_FLAGS=mode=FAST_RUN,device=gpu,floatX=float32 python do_job.py"
+ssh -i ~/Downloads/thtestbed.pem ubuntu@$IP "cd ~/pong_rnn; THEANO_FLAGS=mode=FAST_RUN,device=gpu,floatX=float32 jupyter_theano"
 
 
 
