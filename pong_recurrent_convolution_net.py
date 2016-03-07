@@ -14,6 +14,7 @@ import theano.tensor as T
 import numpy as np
 from my_layers import * 
 import Model
+import sys
 
 class PongRCNN(Model.Model): 
 
@@ -106,12 +107,13 @@ class PongRCNN(Model.Model):
         N = self.batch_size
         sum_loss = 0
         frames_per_epoch = int(q.shape[1] / N)
+        stops = int(35*frames_per_epoch / i)
 
         while (epochs < num_epochs): 
             if (i + N > q.shape[1]): 
                 epochs += 1
                 avg_loss = sum_loss / (1.0*i / N)
-                print "Loss after %i epochs: %f" % (epochs, avg_loss)
+                print "\nLoss after %i epochs: %f" % (epochs, avg_loss)
                 sum_loss = 0
                 i = 0
                 alpha = alpha * lr_decay
@@ -140,6 +142,12 @@ class PongRCNN(Model.Model):
             if loss < best_loss:
                 best_loss = loss
                 best_params = self.get_weights()
+
+            stops = int(35*frames_per_epoch / i)
+            sys.stdout.write("#"*stops)
+            sys.stdout.flush()
+            sys.stdout.write("\b"*stops)
+
             i = i + N
 
 
