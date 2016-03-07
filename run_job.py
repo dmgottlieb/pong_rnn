@@ -6,7 +6,15 @@ import subprocess
 
 model = PongRCNN(batch_size=64)
 
-q,p,y = data_generation.generate_data_RNN(num_seq=(2**17))
+#q,p,y = data_generation.generate_data_RNN(num_seq=(2**17))
+
+f = h5py.File('data/rnn_large_data.hdf5','r')
+
+q = f['q']
+p = f['p']
+y = f['y']
+
+f.close()
 
 
 
@@ -19,7 +27,7 @@ history = model.train_multibatch(q,p,y,alpha,lr_decay,num_epochs=10)
 model.save_weights('weights/rcn-large.HDF5')
 subprocess.call('aws sync weights/ s3://model-checkpoints', shell=True)
 
-f = h5py.File('history/rcn-large-hist.HDF5') 
+f = h5py.File('history/rcn-large-hist.HDF5','w') 
 f['hist'] = history
 f.close()
 
