@@ -107,6 +107,7 @@ class PongRCNN(Model.Model):
         N = self.batch_size
         sum_loss = 0
         frames_per_epoch = int(q.shape[1] / N)
+        stops = 0
 
         while (epochs < num_epochs): 
             if (i + N > q.shape[1]): 
