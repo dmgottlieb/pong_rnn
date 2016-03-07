@@ -143,7 +143,7 @@ class PongRCNN(Model.Model):
                 best_loss = loss
                 best_params = self.get_weights()
 
-            stops = int(35*frames_per_epoch / i)
+            stops = int(35*i / (frames_per_epoch))
             sys.stdout.write("#"*stops)
             sys.stdout.flush()
             sys.stdout.write("\b"*stops)
