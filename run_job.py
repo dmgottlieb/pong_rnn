@@ -3,6 +3,7 @@ import h5py
 import data_generation
 import sys
 import subprocess
+import numpy as np 
 
 model = PongRCNN(batch_size=64)
 
@@ -10,9 +11,9 @@ model = PongRCNN(batch_size=64)
 
 f = h5py.File('data/rnn_large_data.hdf5','r')
 
-q = f['q']
-p = f['p']
-y = f['y']
+q = np.array(f['q'])
+p = np.array(f['p'])
+y = np.array(f['y'])
 
 f.close()
 
