@@ -33,16 +33,20 @@ class PongRCNN(Model.Model):
         self.Q_view = self.Q.reshape((Tt,N,1,height,width))
         
         self.LSTM_RCN1 = LSTM_RCNLayer(input_var=self.Q_view,sequence=seq_length,
-        			n_input_channels=1, height=3,width=3,n_filters=4,
+        			n_input_channels=1, height=3,width=3,n_filters=8,
         			layerid='LSTM_RCN1')
 
         self.LSTM_RCN2 = LSTM_RCNLayer(input_var=self.LSTM_RCN1.output,
         			sequence=seq_length, layerid='LSTM_RCN2',
-        			n_input_channels=4, height=3,width=3,n_filters=4)
+        			n_input_channels=8, height=3,width=3,n_filters=16)
 
-        self.POOL = T.signal.pool.pool_2d(self.LSTM_RCN2.output,(2,2))
+        self.LSTM_RCN3 = LSTM_RCNLayer(input_var=self.LSTM_RCN2.output,
+			sequence=seq_length, layerid='LSTM_RCN3',
+			n_input_channels=16, height=3,width=3,n_filters=16)
 
-        Q_unroll = self.POOL.reshape((Tt,N,height*width*4/4),ndim=3)
+        self.POOL = T.signal.pool.pool_2d(self.LSTM_RCN3.output,(2,2))
+
+        Q_unroll = self.POOL.reshape((Tt,N,height*width*16/4),ndim=3)
 
         PandQ = T.concatenate([Q_unroll, 
                     self.P],
@@ -174,5 +178,5 @@ class PongRCNN(Model.Model):
 
         # return ng
 
-    
+
 
