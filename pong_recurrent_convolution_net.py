@@ -18,7 +18,7 @@ import sys
 
 class PongRCNN(Model.Model): 
 
-    def __init__(self, seq_length=8,batch_size=128,height=32,width=32): 
+    def __init__(self, seq_length=8,batch_size=64,height=32,width=32): 
         
         self.Q = T.tensor4('Q',dtype=config.floatX) # (seq,batch,H,W)
         self.P = T.tensor3('P',dtype=config.floatX) # (seq,batch,D=2)
@@ -94,7 +94,7 @@ class PongRCNN(Model.Model):
     def train(self, q, p, y,alpha=1e-2): 
         return self._train(q,p,y,alpha)
 
-    def train_multibatch(self,q,p,y,alpha=1e-2,lr_decay=1.0,num_epochs=1):
+    def train_multibatch(self,q,p,y,alpha=1e-2,lr_decay=1.0,batch_size=64,num_epochs=1):
         """
         Split data into minibatches (batch size is fixed at init). 
         If batch size doesn't divide data, remainder are not used. 
@@ -109,7 +109,7 @@ class PongRCNN(Model.Model):
         epochs = 0
 
         i = 0 
-        N = self.batch_size
+        N = batch_size
         sum_loss = 0
         frames_per_epoch = int(q.shape[1] / N)
         stops = 0

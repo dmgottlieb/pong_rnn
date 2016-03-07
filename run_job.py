@@ -23,7 +23,7 @@ alpha = 1e-1
 lr_decay=0.99
 num_epochs = 1
 
-history = model.train_multibatch(q,p,y,alpha,lr_decay,num_epochs=10)
+history = model.train_multibatch(q,p,y,alpha,lr_decay,num_epochs=num_epochs)
 
 model.save_weights('weights/rcn-large.HDF5')
 subprocess.call('aws sync weights/ s3://model-checkpoints', shell=True)
