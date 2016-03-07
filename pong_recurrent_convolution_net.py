@@ -52,7 +52,7 @@ class PongRCNN(Model.Model):
                     self.P],
                     axis=2)
 
-        self.FC1 = TemporalReluFC(input_var=PandQ,num_units=512,layerid='FC1',in_dim=(height*width*4/4 + 2))
+        self.FC1 = TemporalReluFC(input_var=PandQ,num_units=512,layerid='FC1',in_dim=(height*width*16/4 + 2))
 
         self.FC2 = TemporalFC(input_var=self.FC1.output,
                     num_units=height*width,
