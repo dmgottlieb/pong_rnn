@@ -54,7 +54,7 @@ class PongRCNN(Model.Model):
                     axis=2)
 
         self.LSTM = LSTMLayer(input_var=PandQ, num_units=512,layerid='LSTM',
-            sequence=Tt,in_dim=(height*width*16/4 + 2))
+            sequence=Tt,in_dim=(height*width*8/4 + 2))
 
         #self.FC1 = TemporalReluFC(input_var=PandQ,num_units=512,layerid='FC1',in_dim=(height*width*16/4 + 2))
 
