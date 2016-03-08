@@ -15,7 +15,7 @@ import theano.tensor as T
 import numpy as np
 from my_layers import * 
 
-class LookbackNet(object): 
+class LookbackNet(Model.Model): 
 
     def __init__(self, window=4,batch_size=128,height=32,width=32): 
         
