@@ -21,7 +21,7 @@ f.close()
 
 alpha = 1e-1
 lr_decay=0.99
-num_epochs = 1
+num_epochs = 10
 
 history = model.train_multibatch(q,p,y,alpha,lr_decay,num_epochs=num_epochs)
 
