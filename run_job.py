@@ -1,4 +1,4 @@
-from pong_recurrent_convolution_net import * 
+#from pong_recurrent_convolution_net import * 
 import h5py
 import data_generation
 import sys
@@ -6,11 +6,21 @@ import subprocess
 import numpy as np 
 from pong_lookback_net import * 
 
+
+#q,p,y = data_generation.generate_data_lookback(seq_length=4,num_seq=(2**18))
+
+#f = h5py.File('data/lookback_large_data.hdf5','w')
+#f['q']=q
+#f['p']=p
+#f['y']=y
+#f.close()
+
+subprocess.call('aws s3 sync data/ s3://pong-rnn-model-data',shell=True)
+
 model = LookbackNet()
 
-#q,p,y = data_generation.generate_data_RNN(num_seq=(2**17))
 
-f = h5py.File('data/rnn_large_data.hdf5','r')
+f = h5py.File('data/lookback_large_data.hdf5','r')
 
 q = np.array(f['q'])
 p = np.array(f['p'])
