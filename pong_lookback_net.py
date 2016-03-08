@@ -25,7 +25,7 @@ class LookbackNet(Model.Model):
         self.P = T.matrix('P',dtype=config.floatX) # (batch,D=2)
         self.Y = T.tensor3('Y',dtype=config.floatX) # (batch,H,W)
 
-	self.seq_length = self.Q.shape[1]
+	self.seq_length = window
         self.alpha = T.scalar('alpha',dtype=config.floatX) # learning rate
         
         self.CONV1 = ConvReluLayer(input_var=self.Q,

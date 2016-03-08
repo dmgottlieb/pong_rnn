@@ -40,7 +40,7 @@ model.save_weights('weights/lookback-large.HDF5')
 subprocess.call('aws s3 sync weights/ s3://model-checkpoints', shell=True)
 
 f = h5py.File('history/lookback-large-hist.HDF5','w') 
-f['hist'] = history
+f['hist'] = np.array(history,dtype=np.float32)
 f.close()
 
 subprocess.call('aws s3 sync history/ s3://model-history', shell=True)
