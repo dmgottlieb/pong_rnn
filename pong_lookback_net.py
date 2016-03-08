@@ -95,7 +95,7 @@ class LookbackNet(Model.Model):
         i = 0 
         N = batch_size
         sum_loss = 0
-        frames_per_epoch = int(q.shape[1] / N)
+        frames_per_epoch = int(q.shape[0] / N)
         stops = 0
 
         while (epochs < num_epochs): 
