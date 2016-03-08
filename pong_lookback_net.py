@@ -14,6 +14,7 @@ from theano import *
 import theano.tensor as T
 import numpy as np
 from my_layers import * 
+import Model
 
 class LookbackNet(Model.Model): 
 
