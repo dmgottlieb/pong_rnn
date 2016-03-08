@@ -4,8 +4,9 @@ import data_generation
 import sys
 import subprocess
 import numpy as np 
+from pong_lookback_net import * 
 
-model = PongRCNN(batch_size=64)
+model = LookbackNet()
 
 #q,p,y = data_generation.generate_data_RNN(num_seq=(2**17))
 
@@ -25,11 +26,11 @@ num_epochs = 10
 
 history = model.train_multibatch(q,p,y,alpha,lr_decay,num_epochs=num_epochs)
 
-model.save_weights('weights/rcn-large.HDF5')
-subprocess.call('aws sync weights/ s3://model-checkpoints', shell=True)
+model.save_weights('weights/lookback-large.HDF5')
+subprocess.call('aws s3 sync weights/ s3://model-checkpoints', shell=True)
 
-f = h5py.File('history/rcn-large-hist.HDF5','w') 
+f = h5py.File('history/lookback-large-hist.HDF5','w') 
 f['hist'] = history
 f.close()
 
-subprocess.call('aws sync history/ s3://model-history', shell=True)
+subprocess.call('aws s3 sync history/ s3://model-history', shell=True)
