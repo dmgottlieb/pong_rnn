@@ -97,7 +97,7 @@ class LookbackNet(Model.Model):
         stops = 0
 
         while (epochs < num_epochs): 
-            if (i + N > q.shape[1]): 
+            if (i + N > q.shape[0]): 
                 epochs += 1
                 avg_loss = sum_loss / (1.0*i / N)
                 print "\nLoss after %i epochs: %f" % (epochs, avg_loss)
