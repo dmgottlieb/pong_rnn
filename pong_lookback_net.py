@@ -58,46 +58,19 @@ class LookbackNet(object):
         self.loss = -(self.Y * T.log(Y_pred)*14 + (1-self.Y)* T.log(1-Y_pred)).mean(dtype=config.floatX)
         #self.compute_loss = function([self.Q,self.P,self.Y],outputs=self.loss)
 
-        self.params = (self.CONV1.params + 
-                    self.CONV2.params + 
-                    self.FC1.params + 
-                    self.FC2.params)
+        self.params = {}
+        self.params.update(self.CONV1.params)
+        self.params.update(self.CONV2.params)
+        self.params.update(self.FC1.params)
+        self.params.update(self.FC2.params)
 
-        self.grads = T.grad(cost=self.loss,wrt=self.params)
+        self.train_args = [self.Q,self.P,self.Y,self.alpha]
+        self.predict_args = [self.Q,self.P]
 
-        self._grad = function([self.Q,self.P,self.Y],outputs=self.grads)
+        self.output = Y_pred
 
-        self.updates=[]
-        i = shared(np.cast['float32'](0))
-        #i = shared(np.zeros(1).astype(np.float32))
-        i_t = i + 1.0
-        self.updates.append((i,i_t))
-        alpha_t = T.sqrt(1 - 0.999 ** i_t) / (1 - 0.9 ** i_t) * self.alpha
+        super(LookbackNet, self).__init__()
 
-        for p, g in zip(self.params,self.grads):
-            m = shared(p.get_value()*0.)
-            v = shared(p.get_value()*0.)
-            m_t = 0.9*m + 0.1*g
-            v_t = 0.999*v + 0.001*g**2
-            p_t = p - m_t*alpha_t / T.sqrt(v_t + 1e-7)
-            self.updates.append((m,m_t))
-            self.updates.append((v,v_t))
-            self.updates.append((p,p_t))
-
-
-
-        #self.updates = [(self.params[i], self.params[i] - self.alpha * self.grads[i])
-        #        for i in range(len(self.params))]
-
-        self._train = function([self.Q,self.P,self.Y,self.alpha],
-                    outputs=self.loss,
-                    updates=self.updates)
-
-        self._validate = function([self.Q,self.P,self.Y],outputs=self.loss)
-    
-        self._predict = function([self.Q,self.P],outputs=Y_pred)
-
-        #self.print_y_softmax = function([self.Q,self.P],Y_pred)
 
     def train(self, q, p, y,alpha=1e-2): 
         return self._train(q,p,y,alpha)
