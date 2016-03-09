@@ -12,6 +12,7 @@
 
 from theano import *
 import theano.tensor as T
+import theano.tensor.signal.pool
 import numpy as np
 from my_layers import * 
 import Model
